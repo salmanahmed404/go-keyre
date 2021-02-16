@@ -5,6 +5,8 @@ import (
 	"log"
 	"net"
 	"sync"
+
+	"github.com/salmanahmed404/go-keyre/internal/store"
 )
 
 //Server is the multi-threaded TCP server
@@ -14,6 +16,7 @@ type Server struct {
 	stop            chan struct{}
 	quit            chan struct{}
 	connectionGroup *sync.WaitGroup
+	db              *store.DB
 }
 
 func (s *Server) listen() {
@@ -76,6 +79,7 @@ func NewServer(service string) *Server {
 		stop:            make(chan struct{}),
 		quit:            make(chan struct{}),
 		connectionGroup: new(sync.WaitGroup),
+		db:              store.NewDB(),
 	}
 	go srv.listen()
 	return srv
