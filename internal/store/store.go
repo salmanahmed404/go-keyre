@@ -17,10 +17,13 @@ type DB struct {
 //new instance of the in-memory DB
 func NewDB() *DB {
 	db := &DB{make(map[string]interface{})}
+
+	//case where db file does not exist
 	if _, err := os.Stat("dbdata"); os.IsNotExist(err) {
 		return db
 	}
 
+	//case where db file already exists
 	raw, err := ioutil.ReadFile("dbdata")
 	if err != nil {
 		log.Fatal("DB File read error! ", err.Error())

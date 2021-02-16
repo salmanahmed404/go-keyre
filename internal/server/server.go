@@ -1,7 +1,10 @@
 package server
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"sync"
@@ -63,6 +66,18 @@ func (s *Server) commit() {
 	log.Println("Waiting for connections to close...")
 	s.connectionGroup.Wait()
 	log.Println("Commiting...")
+
+	//persisting to file
+	buffer := new(bytes.Buffer)
+	encoder := gob.NewEncoder(buffer)
+	err := encoder.Encode(s.db)
+	if err != nil {
+		log.Fatal("GOB encoder error! ", err.Error())
+	}
+	err = ioutil.WriteFile("dbdata", buffer.Bytes(), 0600)
+	if err != nil {
+		log.Fatal("File write error! ", err.Error())
+	}
 	close(s.quit)
 }
 
