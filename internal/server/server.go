@@ -55,6 +55,11 @@ func (s *Server) handleConnection(conn net.Conn) {
 	write(conn, "Welcome!")
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
+		if _, ok := <-s.stop; !ok {
+			write(conn, "Closing connection, server has stopped!")
+			conn.Close()
+			return
+		}
 		l := strings.TrimSpace(scanner.Text())
 		input := strings.Split(l, " ")
 		switch {
