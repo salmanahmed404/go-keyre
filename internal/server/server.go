@@ -1,12 +1,14 @@
 package server
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/gob"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
+	"strings"
 	"sync"
 
 	"github.com/salmanahmed404/go-keyre/internal/store"
@@ -50,8 +52,27 @@ func (s *Server) listen() {
 }
 
 func (s *Server) handleConnection(conn net.Conn) {
-	conn.Write([]byte("Welcome!"))
-	conn.Close()
+	write(conn, "Welcome!")
+	scanner := bufio.NewScanner(conn)
+	for scanner.Scan() {
+		l := strings.TrimSpace(scanner.Text())
+		input := strings.Split(l, " ")
+		switch {
+		case len(input) == 3 && input[0] == "SET":
+			s.db.Set(input[1], input[2])
+			write(conn, "KV-Pair added!")
+		case len(input) == 2 && input[0] == "GET":
+			if value, ok := s.db.Get(input[1]); ok {
+				write(conn, value)
+			} else {
+				write(conn, "Key not found!")
+			}
+		case len(input) == 1 && input[0] == "EXIT":
+			conn.Close()
+		default:
+			write(conn, "Unknown Command!")
+		}
+	}
 }
 
 //Stop is a...
@@ -79,6 +100,13 @@ func (s *Server) commit() {
 		log.Fatal("File write error! ", err.Error())
 	}
 	close(s.quit)
+}
+
+func write(conn net.Conn, s string) {
+	_, err := fmt.Fprintln(conn, s)
+	if err != nil {
+		log.Fatal("Connection write error! ", err.Error())
+	}
 }
 
 //NewServer creates a new instance of Server

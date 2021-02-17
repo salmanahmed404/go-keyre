@@ -10,13 +10,26 @@ import (
 
 //DB is the type for the in-memory DB
 type DB struct {
-	Record map[string]interface{}
+	Items map[string]string
+}
+
+//Set is a method which adds a key-value pair
+//to the in-memory store
+func (db *DB) Set(key, value string) {
+	db.Items[key] = value
+}
+
+//Get is a method which returns a value for a
+//corresponding key passed as argument
+func (db *DB) Get(key string) (string, bool) {
+	value, ok := db.Items[key]
+	return value, ok
 }
 
 //NewDB is a function that creates and return a
 //new instance of the in-memory DB
 func NewDB() *DB {
-	db := &DB{make(map[string]interface{})}
+	db := &DB{make(map[string]string)}
 
 	//case where db file does not exist
 	if _, err := os.Stat("dbdata"); os.IsNotExist(err) {

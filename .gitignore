@@ -1,1 +1,5 @@
+#the generated executable
 go-keyre
+
+#file used for persisten by the db
+dbdata
