@@ -67,6 +67,9 @@ func (s *Server) handleConnection(conn net.Conn) {
 			} else {
 				write(conn, "Key not found!")
 			}
+		case len(input) == 2 && input[0] == "DELETE":
+			s.db.Delete(input[1])
+			write(conn, "Deleted!")
 		case len(input) == 1 && input[0] == "EXIT":
 			conn.Close()
 		default:
