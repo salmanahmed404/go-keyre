@@ -18,7 +18,7 @@ import (
 type Server struct {
 	listener        net.Listener
 	connections     map[uint]net.Conn
-	stop            chan struct{}
+	state           string
 	quit            chan struct{}
 	connectionGroup *sync.WaitGroup
 	db              *store.DB
@@ -31,7 +31,7 @@ func (s *Server) listen() {
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
-			if _, ok := <-s.stop; ok {
+			if s.state == "R" {
 				log.Println("New connection error!", err.Error())
 				continue
 			} else {
@@ -59,8 +59,12 @@ func (s *Server) handleConnection(conn net.Conn) {
 		input := strings.Split(l, " ")
 		switch {
 		case len(input) == 3 && input[0] == "SET":
-			s.db.Set(input[1], input[2])
-			write(conn, "KV-Pair added!")
+			if ok := checkKV(input[1], input[2]); ok {
+				s.db.Set(input[1], input[2])
+				write(conn, "KV pair inserted!")
+			} else {
+				write(conn, "Size exceed! KEY: 32chars  VALUE: 255chars")
+			}
 		case len(input) == 2 && input[0] == "GET":
 			if value, ok := s.db.Get(input[1]); ok {
 				write(conn, value)
@@ -72,10 +76,11 @@ func (s *Server) handleConnection(conn net.Conn) {
 			write(conn, "Deleted!")
 		case len(input) == 1 && input[0] == "EXIT":
 			conn.Close()
+			return
 		default:
-			write(conn, "Unknown Command!")
+			write(conn, "Unknown Command or Wrong Format!")
 		}
-		if _, ok := <-s.stop; !ok {
+		if s.state == "S" {
 			write(conn, "Closing connection, server has stopped!")
 			conn.Close()
 			return
@@ -86,7 +91,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 //Stop is a...
 func (s *Server) Stop() {
 	log.Println("Server is stopping...")
-	close(s.stop)
+	s.state = "S"
 	s.listener.Close()
 	<-s.quit
 }
@@ -117,6 +122,13 @@ func write(conn net.Conn, s string) {
 	}
 }
 
+func checkKV(key, value string) bool {
+	if len(key) > 32 || len(value) > 255 {
+		return false
+	}
+	return true
+}
+
 //NewServer creates a new instance of Server
 func NewServer(service string) *Server {
 	listener, err := net.Listen("tcp", service)
@@ -127,7 +139,7 @@ func NewServer(service string) *Server {
 	srv := &Server{
 		listener:        listener,
 		connections:     map[uint]net.Conn{},
-		stop:            make(chan struct{}),
+		state:           "R",
 		quit:            make(chan struct{}),
 		connectionGroup: new(sync.WaitGroup),
 		db:              store.NewDB(),
