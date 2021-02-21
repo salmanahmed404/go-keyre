@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/common-nighthawk/go-figure"
 	"github.com/salmanahmed404/go-keyre/internal/store"
 )
 
@@ -26,6 +27,10 @@ type Server struct {
 }
 
 func (s *Server) listen() {
+
+	banner := figure.NewColorFigure("Go-Keyre", "", "green", true)
+	banner.Print()
+
 	var connID uint
 	connID = 1
 	fmt.Println("Waiting for connections: ")
@@ -53,7 +58,10 @@ func (s *Server) listen() {
 }
 
 func (s *Server) handleConnection(conn net.Conn) {
-	write(conn, "Welcome!")
+
+	welcomeBanner := figure.NewFigure("Welcome!", "", true)
+	conn.Write([]byte(welcomeBanner.String()))
+
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
 		l := strings.TrimSpace(scanner.Text())
