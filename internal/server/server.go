@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -63,7 +64,10 @@ func (s *Server) handleConnection(conn net.Conn) {
 				s.db.Set(input[1], input[2])
 				write(conn, "KV pair inserted!")
 			} else {
-				write(conn, "Size exceed! KEY: 32chars  VALUE: 255chars")
+				message := "Size or Format error!" +
+					"CHARSET: Both case alphabets, numbers and symbols (@ and _)" +
+					"KEY: 32chars  VALUE: 255chars"
+				write(conn, message)
 			}
 		case len(input) == 2 && input[0] == "GET":
 			if value, ok := s.db.Get(input[1]); ok {
@@ -124,6 +128,15 @@ func write(conn net.Conn, s string) {
 
 func checkKV(key, value string) bool {
 	if len(key) > 32 || len(value) > 255 {
+		return false
+	}
+
+	validPattern := "^[a-zA-Z0-9@_]+$"
+	if ok, _ := regexp.MatchString(validPattern, key); !ok {
+		return false
+	}
+
+	if ok, _ := regexp.MatchString(validPattern, value); !ok {
 		return false
 	}
 	return true
