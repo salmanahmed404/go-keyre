@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/common-nighthawk/go-figure"
 	"github.com/salmanahmed404/go-keyre/internal/store"
@@ -63,6 +64,8 @@ func (s *Server) handleConnection(conn net.Conn) {
 	conn.Write([]byte(welcomeBanner.String()))
 
 	scanner := bufio.NewScanner(conn)
+	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+
 	for scanner.Scan() {
 		l := strings.TrimSpace(scanner.Text())
 		input := strings.Split(l, " ")
@@ -77,27 +80,40 @@ func (s *Server) handleConnection(conn net.Conn) {
 					"KEY: 32chars  VALUE: 255chars"
 				write(conn, message)
 			}
+
 		case len(input) == 2 && input[0] == "GET":
 			if value, ok := s.db.Get(input[1]); ok {
 				write(conn, value)
 			} else {
 				write(conn, "Key not found!")
 			}
+
 		case len(input) == 2 && input[0] == "DELETE":
 			s.db.Delete(input[1])
 			write(conn, "Deleted!")
+
+		case len(input) == 1 && input[0] == "PING":
+			write(conn, "PONG")
+
 		case len(input) == 1 && input[0] == "EXIT":
 			conn.Close()
 			return
+
 		default:
 			write(conn, "Unknown Command or Wrong Format!")
 		}
+
 		if s.state == "S" {
 			write(conn, "Closing connection, server has stopped!")
 			conn.Close()
 			return
 		}
+
+		conn.SetReadDeadline(time.Now().Add(30 * time.Second))
 	}
+	write(conn, "Connection timed out!")
+	conn.Close()
+	return
 }
 
 //Stop is a...
