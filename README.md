@@ -4,11 +4,11 @@ It also has a persistence feature which stores the gob of the database in the di
 
 ## Running Locally
 * Prerequisites
-    *[Go] (https://golang.org/dl/)
+    [Go] (https://golang.org/dl/)
 
 1. **Clone the repository**
 ```
-    git clone [repository_url]
+    git clone https://github.com/salmanahmed404/go-keyre.git
 ```
 
 2. **Build & Execute**
