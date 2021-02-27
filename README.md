@@ -4,7 +4,7 @@ It also has a persistence feature which stores the gob of the database in the di
 
 ## Running Locally
 * Prerequisites
-    [Go] (https://golang.org/dl/)
+  * [Go](https://golang.org/dl/)
 
 1. **Clone the repository**
 ```
